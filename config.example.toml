@@ -1,0 +1,18 @@
+[youtube]
+channel = "https://www.youtube.com/@handle"
+max_scan = 3000
+exclude_shorts = true
+exclude_live = true
+cookies_file = "/app/cookies.txt"
+
+[telegram]
+chat_id = "@my_channel"
+
+[publish]
+caption_template = '<a href="{url}">{title}</a>'
+
+[state]
+file = "/data/posted.txt"
+
+[network]
+timeout = 30

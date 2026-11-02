@@ -1,0 +1,12 @@
+services:
+  yt-thumb-bot:
+    build: .
+    image: yt-thumb-bot:latest
+    container_name: yt-thumb-bot
+    environment:
+      - TG_BOT_TOKEN=${TG_BOT_TOKEN:-}
+    volumes:
+      - ./config.toml:/app/config.toml:ro
+      - ./data:/data
+      - ./cookies.txt:/app/cookies.txt:ro
+    restart: "no"
