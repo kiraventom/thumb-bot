@@ -7,6 +7,8 @@ import html
 import logging
 import os
 import random
+import shutil
+import tempfile
 import time
 import tomllib
 from dataclasses import dataclass
@@ -129,6 +131,21 @@ def normalize_channel_url(value: str) -> str:
     return v
 
 
+def prepare_cookies(path_value: str) -> tuple[str, Path]:
+    src = Path(path_value).expanduser()
+    if not src.exists():
+        raise RuntimeError(f"cookies_file указан, но файла нет: {src}")
+    if not src.is_file():
+        raise RuntimeError(f"cookies_file - это не файл: {src}")
+
+    tmpdir = Path(tempfile.mkdtemp(prefix="ytthumb-cookies-"))
+    dst = tmpdir / (src.name or "cookies.txt")
+    shutil.copyfile(src, dst)
+    os.chmod(dst, 0o600)
+    LOG.info("cookies взяты из %s, рабочая копия: %s", src, dst)
+    return str(dst), tmpdir
+
+
 def list_channel_videos(cfg: Config) -> tuple[list[Video], str]:
     url = normalize_channel_url(cfg.channel)
     opts = {
@@ -140,15 +157,20 @@ def list_channel_videos(cfg: Config) -> tuple[list[Video], str]:
         "ignoreerrors": True,
         "socket_timeout": cfg.timeout,
     }
+    cookies_tmpdir: Path | None = None
     if cfg.cookies_file:
-        opts["cookiefile"] = cfg.cookies_file
+        opts["cookiefile"], cookies_tmpdir = prepare_cookies(cfg.cookies_file)
 
     LOG.info("читаю список видео: %s (лимит %d)", url, cfg.max_scan)
-    with yt_dlp.YoutubeDL(opts) as ydl:
-        try:
-            info = ydl.extract_info(url, download=False)
-        except yt_dlp.utils.DownloadError as exc:
-            raise RuntimeError(f"yt-dlp не смог прочитать канал: {exc}") from exc
+    try:
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            try:
+                info = ydl.extract_info(url, download=False)
+            except yt_dlp.utils.DownloadError as exc:
+                raise RuntimeError(f"yt-dlp не смог прочитать канал: {exc}") from exc
+    finally:
+        if cookies_tmpdir is not None:
+            shutil.rmtree(cookies_tmpdir, ignore_errors=True)
 
     if not info:
         raise RuntimeError(
