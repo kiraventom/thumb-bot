@@ -26,7 +26,6 @@ THUMB_URLS = (
     "https://i.ytimg.com/vi/{vid}/sddefault.jpg",
     "https://i.ytimg.com/vi/{vid}/hqdefault.jpg",
 )
-DEFAULT_CAPTION = '<a href="{url}">{title}</a>'
 CAPTION_LIMIT = 1024
 MAX_PHOTO_BYTES = 9 * 1024 * 1024
 VIDEO_ID_LEN = 11
@@ -82,7 +81,7 @@ def load_config(path: Path) -> Config:
         chat_id=chat_id,
         bot_token=bot_token,
         state_file=Path(str(st.get("file") or "/data/posted.txt")),
-        caption_template=str(pub.get("caption_template") or DEFAULT_CAPTION),
+        caption_template=str(pub.get("caption_template") or ''),
         max_scan=max(1, int(yt.get("max_scan") or 200)),
         exclude_shorts=bool(yt.get("exclude_shorts", True)),
         exclude_live=bool(yt.get("exclude_live", True)),
